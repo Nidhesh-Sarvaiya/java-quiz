@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Java String Architecture Quiz - Group 10</title>
+<style>
+  :root {
+    --bg: #F5F5F7;
+    --card: #FFFFFF;
+    --text: #1D1D1F;
+    --muted: #86868B;
+    --accent: #0071E3;
+    --accent-hover: #0077ED;
+    --green: #34C759;
+    --green-bg: #EAF9EE;
+    --red: #FF3B30;
+    --red-bg: #FFF2F2;
+    --border: #E5E5E7;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    min-height: 100dvh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .quiz-wrapper {
+    width: 100%;
+    max-width: 520px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header */
+  .quiz-header {
+    padding: 18px 24px 14px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .pill {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .pill::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .meta-text {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  /* Progress Bar */
+  .progress-track {
+    width: 100%;
+    height: 4px;
+    background: #EFEFF4;
+  }
+  .progress-fill {
+    width: 0%;
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.3s ease;
+  }
+
+  /* Content Body */
+  .quiz-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .screen {
+    display: none;
+    flex-direction: column;
+  }
+  .screen.active {
+    display: flex;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    font-size: 13.5px;
+    color: var(--muted);
+    line-height: 1.45;
+    margin-bottom: 20px;
+  }
+
+  /* Input form for participant */
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  label {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 14px;
+    background: #FAFAFC;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="text"]:focus {
+    border-color: var(--accent);
+    background: #FFFFFF;
+  }
+
+  /* Question Area */
+  .q-counter {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  .q-text {
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.35;
+    margin-bottom: 18px;
+  }
+
+  .options-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .opt-btn {
+    text-align: left;
+    background: #FAFAFC;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .opt-btn:hover:not(:disabled) {
+    background: #F2F2F7;
+    border-color: #D1D1D6;
+  }
+
+  .opt-btn.correct {
+    background: var(--green-bg) !important;
+    border-color: var(--green) !important;
+    color: #155724 !important;
+    font-weight: 700;
+  }
+
+  .opt-btn.wrong {
+    background: var(--red-bg) !important;
+    border-color: var(--red) !important;
+    color: #721C24 !important;
+  }
+
+  /* Explanation Box */
+  .explanation-box {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #F2F2F7;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: #3A3A3C;
+    display: none;
+  }
+  .explanation-box strong { color: var(--text); }
+
+  /* Buttons */
+  .btn-primary {
+    background: var(--accent);
+    color: #FFFFFF;
+    border: none;
+    padding: 14px;
+    border-radius: 14px;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 18px;
+    transition: background 0.2s;
+    text-align: center;
+  }
+  .btn-primary:hover {
+    background: var(--accent-hover);
+  }
+
+  /* Results Card */
+  .result-score-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: #E8F2FD;
+    border: 3px solid var(--accent);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 10px auto 16px auto;
+  }
+  .score-val {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .score-total {
+    font-size: 11.5px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  .participant-tag {
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .participant-tag strong {
+    color: var(--text);
+  }
+</style>
+</head>
+<body>
+
+<div class="quiz-wrapper">
+
+  <!-- Header -->
+  <div class="quiz-header">
+    <div class="pill">Group 10 &bull; Div: 3E</div>
+    <div class="meta-text">Java Architecture Quiz</div>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="progress-track">
+    <div id="progress-bar" class="progress-fill"></div>
+  </div>
+
+  <!-- Body -->
+  <div class="quiz-body">
+
+    <!-- SCREEN 1: PARTICIPANT REGISTRATION (Rubric requirement) -->
+    <div id="screen-welcome" class="screen active">
+      <h1>String vs StringBuffer Quiz</h1>
+      <p class="subtitle">Test your understanding of String Immutability, String Pools, and Thread Safety. 10 random questions will be drawn.</p>
+
+      <div class="form-group">
+        <label for="user-name">Your Full Name</label>
+        <input type="text" id="user-name" placeholder="e.g. John Doe" />
+      </div>
+
+      <div class="form-group">
+        <label for="user-id">Enrollment / Roll No (Optional)</label>
+        <input type="text" id="user-id" placeholder="e.g. 20250310..." />
+      </div>
+
+      <button class="btn-primary" onclick="startQuiz()">Begin 10-Question Quiz →</button>
+    </div>
+
+    <!-- SCREEN 2: ACTIVE QUESTION SCREEN -->
+    <div id="screen-quiz" class="screen">
+      <div id="q-counter" class="q-counter">Question 1 of 10</div>
+      <div id="q-text" class="q-text">Loading question...</div>
+
+      <div id="options-container" class="options-grid"></div>
+
+      <div id="explanation-box" class="explanation-box"></div>
+
+      <button id="next-btn" class="btn-primary" style="display: none;" onclick="nextQuestion()">Next Question →</button>
+    </div>
+
+    <!-- SCREEN 3: RESULTS & SCORECARD -->
+    <div id="screen-result" class="screen">
+      <h1 style="text-align: center;">Quiz Completed!</h1>
+      <p class="subtitle" style="text-align: center; margin-bottom: 8px;">Your response has been verified and recorded.</p>
+
+      <div class="result-score-circle">
+        <div id="final-score" class="score-val">0</div>
+        <div class="score-total">out of 10</div>
+      </div>
+
+      <div class="participant-tag">
+        Evaluated for: <strong id="res-name">Participant</strong> (<span id="res-id">No ID</span>)
+      </div>
+
+      <div id="perf-msg" style="text-align: center; font-size: 13.5px; font-weight: 600; color: var(--accent); margin-bottom: 18px;">
+        Calculating result...
+      </div>
+
+      <button class="btn-primary" onclick="retakeQuiz()">↺ Retake Quiz (10 New Random Questions)</button>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- SCRIPT: QUESTION POOL, SHUFFLING & RESPONSE LOGIC -->
+<script>
+  // Comprehensive Pool of 16 Technical Java Questions
+  const questionPool = [
+    {
+      q: "Where are literal String values like 'hello' stored in modern JVM memory?",
+      opts: ["Java Stack Memory", "String Constant Pool (inside Heap)", "Native Program Counter Register", "Off-heap Metaspace"],
+      ans: 1,
+      exp: "String literals reside in the String Constant Pool (SCP), which is physically located inside the Java Heap."
+    },
+    {
+      q: "What makes java.lang.String inherently immutable?",
+      opts: ["Its internal array is declared final with no mutator methods", "It runs directly on native C++ memory", "It cannot be passed to methods", "It has no constructor"],
+      ans: 0,
+      exp: "String stores characters in a private final array (byte[] since Java 9) and exposes no methods to mutate existing instances."
+    },
+    {
+      q: "What is the primary difference between StringBuffer and StringBuilder?",
+      opts: ["StringBuffer is faster in single-threaded loops", "StringBuffer methods are synchronized (thread-safe); StringBuilder is not", "StringBuilder uses Unicode while StringBuffer does not", "There is no difference in modern Java"],
+      ans: 1,
+      exp: "StringBuffer provides thread safety via synchronized monitor locks; StringBuilder omits synchronization for maximum single-threaded throughput."
+    },
+    {
+      q: "When repeated concatenation (s += 'x') happens in a loop of size N, what is the algorithmic time complexity?",
+      opts: ["O(1)", "O(N)", "O(N²)", "O(N log N)"],
+      ans: 2,
+      exp: "Because String is immutable, each concatenation copies the growing sequence into a new array, yielding O(N²) quadratic time complexity."
+    },
+    {
+      q: "What is the default initial buffer capacity of an empty 'new StringBuffer()'?",
+      opts: ["0 characters", "8 characters", "16 characters", "32 characters"],
+      ans: 2,
+      exp: "An empty StringBuffer allocates a default initial internal buffer capacity of 16 characters."
+    },
+    {
+      q: "When a StringBuffer exceeds its current capacity, how is its new capacity calculated?",
+      opts: ["(Old Capacity * 2) + 2", "Old Capacity + 10", "Old Capacity * 4", "It throws OutOfMemoryError immediately"],
+      ans: 0,
+      exp: "Java doubles the old capacity and adds 2: newCapacity = (oldCapacity * 2) + 2."
+    },
+    {
+      q: "Which common interface is implemented by String, StringBuffer, and StringBuilder?",
+      opts: ["java.lang.Buffer", "java.lang.CharSequence", "java.util.Collection", "java.io.SerializableStream"],
+      ans: 1,
+      exp: "All three classes implement the java.lang.CharSequence interface, enabling polymorphic text handling."
+    },
+    {
+      q: "What happens to the existing String object on the heap when you execute 's = s + \"abc\"'?",
+      opts: ["It is updated in place", "It is orphaned and becomes eligible for Garbage Collection", "It is returned to OS memory immediately", "It is converted to a StringBuffer"],
+      ans: 1,
+      exp: "A new String instance is created with the merged value; the old instance is orphaned as garbage."
+    },
+    {
+      q: "Why is the String class declared 'final' in Java?",
+      opts: ["To prevent subclassing that could override methods and compromise immutability", "To ensure it can only be initialized once", "To allow multiple inheritance", "To disable garbage collection"],
+      ans: 0,
+      exp: "Declaring String final prevents malicious subclasses from breaking immutability and security guarantees."
+    },
+    {
+      q: "Why does Java cache the hashCode() of a String instance after the first calculation?",
+      opts: ["Because String is immutable, so its hash value will never change", "Because it is required by the JVM Garbage Collector", "Because String has no equals() method", "To allow it to be stored on the Stack"],
+      ans: 0,
+      exp: "Since a String's content cannot change, its hashcode is immutable and can be safely cached, accelerating HashMap lookups."
+    },
+    {
+      q: "What is the difference between '==' and '.equals()' when comparing two String references?",
+      opts: ["'==' compares memory addresses (reference identity); '.equals()' compares actual content", "They perform the exact same check", "'.equals()' is faster than '=='", "'==' only works for numbers"],
+      ans: 0,
+      exp: "'==' tests reference equality (pointing to the exact same object in memory), whereas '.equals()' tests character-by-character value equality."
+    },
+    {
+      q: "If multiple threads append concurrently to a shared StringBuilder instance without external locks, what happens?",
+      opts: ["Java automatically adds synchronization", "Race conditions occur, causing overwritten indices and dropped characters", "An immediate Compilation Error is thrown", "It runs 10x faster with no bugs"],
+      ans: 1,
+      exp: "StringBuilder is unsynchronized. Concurrent writes cause race hazards on internal array pointers, leading to data loss."
+    },
+    {
+      q: "How many objects are created by 'String str = new String(\"Data\");' if 'Data' is not yet in the pool?",
+      opts: ["1 object", "2 objects (one in String Pool, one on the standard Heap)", "0 objects", "3 objects"],
+      ans: 1,
+      exp: "One literal string object is placed in the String Constant Pool, and a second distinct String object is allocated on the regular heap."
+    },
+    {
+      q: "In Java 9 and later, how was String internal storage optimized via 'Compact Strings'?",
+      opts: ["Replaced char[] (2 bytes per char) with byte[] and an encoding flag for Latin-1 strings", "Compressed using GZIP", "Stored entirely in CPU registers", "Converted to integers"],
+      ans: 0,
+      exp: "Compact Strings use a byte[] array instead of char[], halving the memory footprint for Latin-1 encoded characters."
+    },
+    {
+      q: "In a high-throughput, single-threaded batch loop, which class is the recommended best practice?",
+      opts: ["String", "StringBuffer", "StringBuilder", "Vector"],
+      ans: 2,
+      exp: "StringBuilder is recommended for single-threaded tasks because it avoids the synchronization lock overhead of StringBuffer."
+    },
+    {
+      q: "Which method converts a mutable StringBuffer or StringBuilder into an immutable String?",
+      opts: ["toImmutable()", "toString()", "castString()", "finalize()"],
+      ans: 1,
+      exp: "The .toString() method returns an immutable String instance representing the current sequence."
+    }
+  ];
+
+  // State
+  let activeQuestions = [];
+  let currentIndex = 0;
+  let score = 0;
+  let participantName = "";
+  let participantId = "";
+
+  // Fisher-Yates Random Shuffle Utility
+  function shuffle(array) {
+    let arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // Start Quiz: Select 10 random questions and shuffle their options
+  function startQuiz() {
+    participantName = document.getElementById('user-name').value.trim() || "Anonymous Participant";
+    participantId = document.getElementById('user-id').value.trim() || "N/A";
+
+    // Draw 10 random questions from the 16-question pool
+    const selected = shuffle(questionPool).slice(0, 10);
+
+    // Shuffle options for each selected question
+    activeQuestions = selected.map(item => {
+      const originalAnswer = item.opts[item.ans];
+      const shuffledOpts = shuffle(item.opts);
+      return {
+        q: item.q,
+        opts: shuffledOpts,
+        ans: shuffledOpts.indexOf(originalAnswer),
+        exp: item.exp
+      };
+    });
+
+    currentIndex = 0;
+    score = 0;
+
+    switchScreen('screen-quiz');
+    renderQuestion();
+  }
+
+  function switchScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+  }
+
+  // Render Current Question
+  function renderQuestion() {
+    const qData = activeQuestions[currentIndex];
+    document.getElementById('q-counter').innerText = `Question ${currentIndex + 1} of 10`;
+    document.getElementById('q-text').innerText = qData.q;
+
+    // Progress Bar
+    const pct = ((currentIndex) / 10) * 100;
+    document.getElementById('progress-bar').style.width = pct + '%';
+
+    // Hide Next and Explanation
+    document.getElementById('next-btn').style.display = 'none';
+    const expBox = document.getElementById('explanation-box');
+    expBox.style.display = 'none';
+
+    // Options
+    const container = document.getElementById('options-container');
+    container.innerHTML = qData.opts.map((opt, i) => `
+      <button class="opt-btn" onclick="selectAnswer(${i}, this)">
+        <span>${String.fromCharCode(65 + i)}.</span>
+        <span>${opt}</span>
+      </button>
+    `).join('');
+  }
+
+  // Handle Option Selection
+  function selectAnswer(selectedIndex, btn) {
+    const qData = activeQuestions[currentIndex];
+    const buttons = document.querySelectorAll('.opt-btn');
+
+    // Disable all options once answered
+    buttons.forEach(b => b.disabled = true);
+
+    const isCorrect = selectedIndex === qData.ans;
+    if (isCorrect) {
+      btn.classList.add('correct');
+      score++;
+    } else {
+      btn.classList.add('wrong');
+      // Highlight the correct answer
+      buttons[qData.ans].classList.add('correct');
+    }
+
+    // Show Technical Explanation
+    const expBox = document.getElementById('explanation-box');
+    expBox.innerHTML = `<strong>${isCorrect ? "✓ Correct!" : "✗ Incorrect."}</strong> ${qData.exp}`;
+    expBox.style.display = 'block';
+
+    // Show Next Button
+    const nextBtn = document.getElementById('next-btn');
+    nextBtn.style.display = 'block';
+    nextBtn.innerText = (currentIndex === 9) ? "View Final Results →" : "Next Question →";
+  }
+
+  // Next Question or Finish
+  function nextQuestion() {
+    currentIndex++;
+    if (currentIndex < 10) {
+      renderQuestion();
+    } else {
+      showResults();
+    }
+  }
+
+  // Final Results
+  function showResults() {
+    document.getElementById('progress-bar').style.width = '100%';
+    switchScreen('screen-result');
+
+    document.getElementById('final-score').innerText = score;
+    document.getElementById('res-name').innerText = participantName;
+    document.getElementById('res-id').innerText = participantId;
+
+    let msg = "";
+    if (score >= 9) {
+      msg = "🌟 Outstanding! Mastery of Java Memory & Concurrency.";
+    } else if (score >= 7) {
+      msg = "👍 Great Job! Strong understanding of Strings and Buffers.";
+    } else if (score >= 5) {
+      msg = "📚 Good effort! Review SCP and thread-safety concepts.";
+    } else {
+      msg = "⚠️ Needs review! Focus on Immutability and Garbage Collection.";
+    }
+    document.getElementById('perf-msg').innerText = msg;
+  }
+
+  // Retake with 10 New Random Questions
+  function retakeQuiz() {
+    startQuiz();
+  }
+</script>
+
+</body>
+</html>
